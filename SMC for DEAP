@@ -1,0 +1,212 @@
+
+%%Main program：
+
+jt = 1200;
+Ts = 0.01;
+%% system parameters
+global A Ah Kh Kh2_s Kh1_s B_u B2_s B1_s Bh F Bh2_s Bh1_s B_w C xr  hmf hmf_d row r column t_q s1 s2  Bhd_u Bhd2_s Bhd1_s;
+A{1} = [-2.9531 0 15.2533;
+        31.4874 0 0;
+        0 0 -3.3333];
+A{3} = [-2.9531 0 3.7226;
+        31.2874 0 0;
+        0 0 -3.3333];
+A{2} = A{1};
+A{4} = A{3};
+B_u{1} = [31.2500 0;
+        -333.200 -333.200;
+        0 402.0629];
+B_u{2} = [31.2500 0;
+        -333.200 -333.200;
+        0 88.6824];
+B_u{3} = B_u{1};
+B_u{4} = B_u{2};
+C{1} = [1 0 0;
+        0 1 0];
+C{3} = C{1};
+C{2} = C{1};
+
+B2_s{1} = [ 0;
+        -333.200;
+        402.0629];
+B2_s{2} = [0;
+        -333.200;
+        88.6824];
+B2_s{3} = B2_s{1};
+B2_s{4} = B2_s{2};
+
+B1_s{1} = [31.2500 ;
+        -333.200 ;
+        0 ];
+B1_s{2} = [31.2500 ;
+        -333.200 ;
+        0 ];
+B1_s{3} = B1_s{1};
+B1_s{4} = B1_s{2};
+
+B_w{1}=[0.2;0.1];
+B_w{2}=B_w{1};
+s1=pi/12-0.5;
+s2=0;
+Bh = zeros(3,2);
+Bh2_s = zeros(3,1);
+Bh1_s = zeros(3,1);
+Kh= zeros(2,3);
+Kh2_s= zeros(1,3);
+Kh1_s=zeros(1,3);
+Ah = zeros(row,row);
+Bhd_u = zeros(3,2);
+Bhd2_s = zeros(3,1);
+Bhd1_s = zeros(3,1);
+t_q=1;
+xd=[0.1;0.1];
+xr=[1.77 2.87 4.97];
+e1=1;
+e2=1;
+F=[e1 0;0 e2];
+
+r = 4; % number of rules
+row = 3;
+column = 2;
+%% Initialize the system states and parameters
+% x = [1.3229 1.3596 5.6095];
+x = [1.3229 1.3596 5.6095];
+%% For figure
+j=1;
+t_draw = zeros(1,jt);
+t_draw1 = zeros(1,jt);
+u_draw = zeros(2,jt);
+x_draw = zeros(3,jt);
+s1_draw = zeros(1,jt);
+s2_draw = zeros(1,jt);
+e1_draw=zeros(1,jt);
+e2_draw=zeros(1,jt);
+e_draw = zeros(3,jt);
+V_draw=zeros(1,jt);
+s1_int=0;
+s2_int=0;
+% x_odraw=zeros(2,jt);
+c=30;
+%% RK4 Solution
+for i = 1:jt
+    
+    if i==40
+        e1=0;
+    end
+    
+    if i==600
+        e1=1;
+    end
+    
+    e1_draw(i)=e1;
+    e2_draw(i)=e2;
+    F=[e1 0;0 e2];
+    hmf = [h_Func(x(end,1),x(end,2),1) h_Func(x(end,1),x(end,2),2) h_Func(x(end,1),x(end,2),3) h_Func(x(end,1),x(end,2),4)];
+    hmf_d = [hd_Func(x(end,1),x(end,2),xd(1),xd(2),1) hd_Func(x(end,1),x(end,2),xd(1),xd(2),2) ...
+        hd_Func(x(end,1),x(end,2),xd(1),xd(2),3) hd_Func(x(end,1),x(end,2),xd(1),xd(2),4)];
+
+    hmf_draw(:,i)=hmf;
+    CCC=zeros(column,row);
+
+    [t,x] = ode45(@r2func,[Ts*(i-1) Ts*i],x(end,:)');
+    y =CCC*x';
+    t_draw(:,i) = Ts*i;
+        if e1==0
+            u=-((Bh2_s'*Bh2_s)^-1)*s2+Kh2_s*(x(end,:)'-xr')-((Bh2_s'*Bh2_s)^-1)*(theta(x(end,:)-xr)+0.1)*sgn(s2);
+            xd=Ah*(x(end,:)'-xr')+Bh2_s*u;
+            u_draw(2,i) = u;
+        else
+            if e2~=0
+                u=-((Bh'*Bh)^-1)*[s1;s2]+Kh*(x(end,:)'-xr')-((Bh'*Bh)^-1)*(theta(x(end,:)-xr)+0.1)*[sgn(s1);sgn(s2)];
+                %             u=-((Bh'*Bh)^-1)*[s1;s2]+Kh*(x(end,:)'-xr')-((Bh'*Bh)^-1)*(0.1)*[sgn(s1);sgn(s2)];
+                xd=Ah*(x(end,:)'-xr')+Bh*u;
+                u_draw(:,i) = u;
+            else
+                u=-((Bh1_s'*Bh1_s)^-1)*s1+Kh1_s*(x(end,:)'-xr')-((Bh1_s'*Bh1_s)^-1)*(theta(x(end,:)-xr)+0.1)*sgn(s1);
+                xd=Ah*x(end,:)'+Bh1_s*u;
+                u_draw(1,i) = u;
+            end
+         end
+    
+    
+    if e1==0
+        t_draw1(:,i) = Ts*i;
+        s2_int=s2_int+(Bh2_s'*(Ah+Bh2_s*Kh2_s)+Bhd2_s')*(x(end,:)'-xr')*Ts;
+        s2=Bh2_s'*(x(end,:)'-xr')-s2_int;
+    else
+        if e2==0
+            s1_int=s1_int+(Bh1_s'*(Ah+Bh1_s*Kh1_s)+Bhd1_s')*(x(end,:)'-xr')*Ts;
+            s1=Bh1_s'*(x(end,:)'-xr')-s1_int;
+        else
+            s1_int=s1_int+(Bh(:,1)'*(Ah+Bh*Kh)+Bhd_u(:,1)')*(x(end,:)'-xr')*Ts;
+            s2_int=s2_int+(Bh(:,2)'*(Ah+Bh*Kh)+Bhd_u(:,2)')*(x(end,:)'-xr')*Ts;
+            s1=Bh(:,1)'*(x(end,:)'-xr')-s1_int;
+            s2=Bh(:,2)'*(x(end,:)'-xr')-s2_int;
+        end
+    end
+    
+    x_draw(:,i) = x(end,:)';
+    e_draw(:,i) = x(end,:)'-xr';
+    V_draw(:,i) = e_draw(1,i)^2+e_draw(2,i)^2;
+    s1_draw(i)=s1;
+    s2_draw(i)=s2;
+end
+
+'finish'
+toc
+
+
+function  result = r2func(t,x)
+global A Ah Kh Kh2_s Kh1_s B_u B2_s B1_s hmf hmf_d row r xr s1 s2 Bh Bh2_s Bh1_s Bhd_u Bhd2_s Bhd1_s F;
+K{1}=[0.0952793247280578,0.0143927298822305,0.178269220936834;-0.00122756614111636,-0.00803430919305265,-0.119080746116427];
+K{2}=[0.0975931254133627,0.0286747824549181,0.390537878998250;-0.00355911383051121,-0.0226668932949437,-0.335293639168525];
+K{3}=[0.0952238616163203,0.0149611506554584,0.185144039941203;-0.00118832752024931,-0.00841334394384103,-0.124460905059296];
+K{4}=[0.0957495605486574,0.0175033784956219,0.224190423377594;-0.00169578025946451,-0.0109859794878276,-0.162944954279368];
+
+K2_s{1}=[-5.24041393760904,-0.131489158193641,-4.09363320451705];
+K2_s{2}=[-8.36570108103382,-0.210079401179567,-6.54058232932421];
+K2_s{3}=[-1.62606798292803,-0.0414488199508376,-1.29407385792604];
+K2_s{4}=[-1.87406172768503,-0.0480701658389622,-1.50170475670723];
+K1_s{1}=[-24.3767754584006,9.37634977653708e-05,-15043.7179931446];
+K1_s{2}=[-24.3778154605235,9.37675730380248e-05,-15044.3544576521];
+K1_s{3}=[-24.3789946936859,9.38191352610369e-05,-15044.7058385577];
+K1_s{4}=[-24.3814268275185,9.38383686908788e-05,-15046.2001094569];
+Ah = zeros(row,row);
+Bh = zeros(3,2);
+Bh2_s = zeros(3,1);
+Bh1_s = zeros(3,1);
+Bhd_u = zeros(3,2);
+Bhd2_s = zeros(3,1);
+Kh= zeros(2,3);
+Kh2_s= zeros(1,3);
+
+for i= 1:r
+     Ah = Ah+hmf(i)*A{i};
+     Bh = Bh+hmf(i)*B_u{i};
+     Bhd_u = Bhd_u+hmf_d(i)*B_u{i};
+     Bhd2_s = Bhd2_s+hmf_d(i)*B2_s{i};
+     Bhd1_s = Bhd1_s+hmf_d(i)*B1_s{i};
+     Bh2_s = Bh2_s+hmf(i)*B2_s{i};
+     Bh1_s = Bh1_s+hmf(i)*B1_s{i};
+     Kh = Kh+hmf(i)*K{i}; 
+     Kh2_s = Kh2_s+hmf(i)*K2_s{i};
+     Kh1_s = Kh1_s+hmf(i)*K1_s{i};
+end
+Bh=Bh*F;
+Bh2_s=Bh2_s*F(2,2);
+Bh1_s=Bh1_s*F(1,1);
+if F(1,1)~=0
+    if F(2,2)~=0
+        u=-((Bh'*Bh)^-1)*[s1;s2]+Kh*(x-xr')-(theta(x-xr')+0.1)*((Bh'*Bh)^-1)*[sgn(s1);sgn(s2)];
+        result=Ah*(x-xr')+Bh*u;
+    else
+        u=-((Bh1_s'*Bh1_s)^-1)*s1+Kh1_s*(x-xr')-(theta(x-xr')+0.1)*((Bh1_s'*Bh1_s)^-1)*sgn(s1);
+        %   u=-((Bh'*Bh)^-1)*[s1;s2]+Kh*(x-xr')-(0.1)*((Bh'*Bh)^-1)*[sgn(s1);sgn(s2)];
+        result=Ah*(x-xr')+Bh1_s*u;
+    end
+else
+    u=-((Bh2_s'*Bh2_s)^-1)*s2+Kh2_s*(x-xr')-(theta(x-xr')+0.1)*((Bh2_s'*Bh2_s)^-1)*sgn(s2);
+    %   u=-((Bh'*Bh)^-1)*[s1;s2]+Kh*(x-xr')-(0.1)*((Bh'*Bh)^-1)*[sgn(s1);sgn(s2)];
+    result=Ah*(x-xr')+Bh2_s*u;
+end
+
