@@ -1,7 +1,7 @@
 
 %%Example 1 LMI program:
 
-
+%%full column rank:
 %% Theorem 1
 clc
 clear all
@@ -136,7 +136,7 @@ tmin
 
 'finish'
 
-
+%%not full column rank:
 %% Theorem 1
 clc
 clear all
@@ -410,6 +410,7 @@ end
 
 %%Example 2 LMI program:
 
+%%full column rank
 clc
 clear all
 close all
@@ -600,6 +601,7 @@ tmin
 
 'finish'
 
+%%not full column rank
 clc
 clear all
 close all
